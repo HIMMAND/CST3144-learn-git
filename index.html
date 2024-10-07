@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue.js Pet Depot</title>
+    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+                <h1 v-text="sitename"></h1>
+                <button @click="showCheckout">
+                    {{ cartItemCount }}
+                    <span class="fas fa-cart-plus"></span>Checkout
+                </button>
+        </header>
+        <main>
+            <div v-if="showProduct">
+                <figure>
+                    <img v-bind:src="product.image" alt="Product Image" style="height: 30vh;">
+                </figure>
+                <h2 v-text="product.subject"></h2>
+                <p v-html="product.description"></p>
+                <p>Location: {{ product.location }}</p>
+                <p>Price: {{ product.price }}</p>
+                <button @click="addToCart(product)" v-if="canAddToCart">Add to Cart</button>
+                <button disabled="disabled" v-else>Add to Cart</button>
+            </div>
+            <div v-else>
+                <h2>Checkout</h2>
+                <!-- <h3>Cart ({{ cart.length }} items)</h3> -->
+                <!-- <ul>
+                <li v-for="item in cart" :key="item.id">{{ item.subject }} - {{ item.price }}</li>
+            </ul> -->
+                <h3>Billing Address</h3>
+                <label for="fname"><i class="fa fa-user"></i> Full Name</label>
+                <input type="text" id="fname" name="firstname" placeholder="John M. Doe"><br><br>
+                <label for="email"><i class="fa fa-envelope"></i> Email</label>
+                <input type="text" id="email" name="email" placeholder="john@example.com"><br><br>
+                <label for="adr"><i class="fa fa-address-card-o"></i> Address</label>
+                <input type="text" id="adr" name="address" placeholder="542 W. 15th Street"><br><br>
+                <label for="city"><i class="fa fa-institution"></i> City</label>
+                <input type="text" id="city" name="city" placeholder="New York"><br>
+            </div>
+        </main>
+    </div>
+
+    <script type="text/javascript">
+        let webstore = new Vue({
+            el: '#app',
+            data: {
+                sitename: 'After School Club',
+                product: {
+                    id: 1001,
+                    subject: 'Math',
+                    description: `In this lesson, we will dive into the world of linear equations. We will begin by exploring what a linear equation is and how it differs from other types of equations. We'll focus on equations in the form <strong>y = mx + b</strong>, where <strong>m</strong> represents the slope and <strong>b</strong> the y-intercept.<br><br>
+                        Students will:<br>
+                        1. Learn how to identify the slope and y-intercept from an equation.<br>
+                        2. Practice solving for <strong>y</strong> when given a value for <strong>x</strong>.<br>
+                        3. Use graph paper to plot linear equations and understand how the slope affects the angle of the line.<br>
+                        4. Apply their knowledge to solve word problems that involve real-life situations, such as budgeting or distance-speed-time problems.`,
+                    location: 'Dubai, UAE',
+                    price: 100,
+                    image: '../images/Logo.png',
+                    availability: 5,
+                    // this acts like stock availability
+                },
+                cart: [],
+                showProduct: true,
+            },
+            methods: {
+                addToCart(product) {
+                    this.cart.push(product);
+                    this.product.availability -= 1
+                },
+                showCheckout() {
+                    this.showProduct = this.showProduct ? false : true;
+                },
+            },
+            computed: {
+                cartItemCount: function () {
+                    return this.cart.length || ""
+                },
+                canAddToCart: function () {
+                    return this.product.availability > 0
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>
