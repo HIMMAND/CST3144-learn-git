@@ -6,45 +6,140 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vue.js Pet Depot</title>
     <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <script src="products.js"></script>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 
 <body>
     <div id="app">
         <header>
-                <h1 v-text="sitename"></h1>
-                <button @click="showCheckout">
-                    {{ cartItemCount }}
-                    <span class="fas fa-cart-plus"></span>Checkout
-                </button>
+            <h1 v-text="sitename"></h1>
+            <button v-on:click="showCheckout" :disabled="cart.length === 0">
+                {{ cartItemCount }}
+                <span class="fas fa-cart-plus"></span>Checkout
+            </button>
         </header>
         <main>
-            <div v-if="showProduct">
-                <figure>
-                    <img v-bind:src="product.image" alt="Product Image" style="height: 30vh;">
-                </figure>
-                <h2 v-text="product.subject"></h2>
-                <p v-html="product.description"></p>
-                <p>Location: {{ product.location }}</p>
-                <p>Price: {{ product.price }}</p>
-                <button @click="addToCart(product)" v-if="canAddToCart">Add to Cart</button>
-                <button disabled="disabled" v-else>Add to Cart</button>
+            <div v-if="showProduct" class="search-sort-container">
+                <div class="searchBox">
+                    <p>
+                        Search:
+                        <input type="text" class="searchInput" v-model="searchTerm"
+                            placeholder="Search for a product...">
+                    </p>
+                </div>
+
+                <!-- Sort Options -->
+                <div class="searchAndSort">
+                    <p><input type="radio" id="priceLowHigh" value="priceLowHigh" v-model="sortStyle">
+                        <label for="priceLowHigh">Price: Low to High</label>
+                    </p>
+                    <p>
+                        <input type="radio" id="priceHighLow" value="priceHighLow" v-model="sortStyle">
+                        <label for="priceHighLow">Price: High to Low</label>
+                    </p>
+                    <p>
+                        <input type="radio" id="aToZ" value="aToZ" v-model="sortStyle">
+                        <label for="aToZ">Name: A to Z</label>
+                    </p>
+                    <p>
+                        <input type="radio" id="zToA" value="zToA" v-model="sortStyle">
+                        <label for="zToA">Name: Z to A</label>
+                    </p>
+                </div>
+            </div>
+
+            <div class="card" v-if="showProduct">
+                <div v-for="product in sortedProducts">
+                    <figure>
+                        <img v-bind:src="product.image" alt="Product Image" style="height: 30vh;">
+                    </figure>
+                    <h2 v-text="product.subject"></h2>
+                    <p v-html="product.description"></p>
+                    <p>Location: {{ product.location }}</p>
+                    <p>Price: {{ product.price }}</p>
+                    <button @click="addToCart(product)" v-if="canAddToCart(product)">Add to Cart</button>
+                    <button disabled="disabled" v-else>Add to Cart</button>
+                    <span v-if="product.availableInventory === cartCount(product.id)">
+                        All Out!
+                    </span>
+                    <span v-else-if="product.availableInventory - cartCount(product.id)<5">
+                        only {{product.availableInventory - cartCount(product.id)}} Left!
+                    </span>
+                    <span v-else>
+                        Buy now!
+                    </span>
+                    <div>
+                        <span v-for='n in product.rating'>★</span>
+                        <span v-for='n in 5 - product.rating'>☆</span>
+                    </div>
+                </div>
+                <!-- <button disabled="disabled" v-else>Add to Cart</button> -->
             </div>
             <div v-else>
                 <h2>Checkout</h2>
-                <!-- <h3>Cart ({{ cart.length }} items)</h3> -->
-                <!-- <ul>
-                <li v-for="item in cart" :key="item.id">{{ item.subject }} - {{ item.price }}</li>
-            </ul> -->
-                <h3>Billing Address</h3>
-                <label for="fname"><i class="fa fa-user"></i> Full Name</label>
-                <input type="text" id="fname" name="firstname" placeholder="John M. Doe"><br><br>
-                <label for="email"><i class="fa fa-envelope"></i> Email</label>
-                <input type="text" id="email" name="email" placeholder="john@example.com"><br><br>
-                <label for="adr"><i class="fa fa-address-card-o"></i> Address</label>
-                <input type="text" id="adr" name="address" placeholder="542 W. 15th Street"><br><br>
-                <label for="city"><i class="fa fa-institution"></i> City</label>
-                <input type="text" id="city" name="city" placeholder="New York"><br>
+                <ul class="list">
+                    <li v-for="(product, index) in cartItems" :key="index">
+                        <input type="checkbox" v-model="selectedCartItems" :value="product" />
+                        {{ product.subject }} - Price: {{ product.price }}
+                        <button @click="removeItem(product)" :disabled="selectedCartItems.length === 0">
+                            Remove
+                        </button>
+                    </li>
+                </ul>
+
+                <p>
+                    <strong>First Name:</strong>
+                    <input v-model.trim="order.firstName">
+                </p>
+                <p>
+                    <strong>Last Name:</strong>
+                    <input v-model="order.lastName">
+                </p>
+                <p>
+                    <strong>Address:</strong><input v-model="order.address">
+                </p>
+                <p>
+                    <strong>city:</strong><input v-model="order.city">
+                </p>
+                <p>
+                    <strong>State:</strong>
+                    <select v-model="order.state" id="">
+                        <option disabled value="">State</option>
+                        <option v-for="(state, key) in states" v-bind:value="state">
+                            {{key}}
+                        </option>
+                    </select>
+                <p>
+                    <strong>Phone Number:</strong>
+                    <input v-model.number="order.phone" placeholder="Enter phone number" type="text">
+                </p>
+                <p>
+                    <strong>zip/postal</strong><input v-model.number="order.zip">
+                </p>
+                <p><input type="checkbox" id="gift" value="true" v-model="order.gift" v-bind:true-value="order.sendGift"
+                        v-bind:false-value="order.dontSendGift">
+                    <label for="gift">Ship As Gift?</label>
+                </p>
+
+                <p><input type="radio" id="home" value="Home" v-model="order.method">
+                    <label for="home">Home</label>
+                </p>
+                <input type="radio" id="business" value="Business" v-model="order.method">
+                <label for="business">business</label></p>
+
+                <button v-on:click="submitForm" :disabled="!isFormComplete">Place Order</button>
+
+                <h2>Order Information</h2>
+                <p>First Name: {{order.firstName}} </p>
+                <p>Last Name: {{order.lastName}}</p>
+                <p>Address:{{order.address}}</p>
+                <p>City:{{order.city}}</p>
+                <p>Zip:{{order.zip}}</p>
+                <p>State: {{order.state}}</p>
+                <p>Gift: {{order.gift}}</p>
+                <p>Method:{{order.method}}</p>
             </div>
         </main>
     </div>
@@ -54,44 +149,106 @@
             el: '#app',
             data: {
                 sitename: 'After School Club',
-                product: {
-                    id: 1001,
-                    subject: 'Math',
-                    description: `In this lesson, we will dive into the world of linear equations. We will begin by exploring what a linear equation is and how it differs from other types of equations. We'll focus on equations in the form <strong>y = mx + b</strong>, where <strong>m</strong> represents the slope and <strong>b</strong> the y-intercept.<br><br>
-                        Students will:<br>
-                        1. Learn how to identify the slope and y-intercept from an equation.<br>
-                        2. Practice solving for <strong>y</strong> when given a value for <strong>x</strong>.<br>
-                        3. Use graph paper to plot linear equations and understand how the slope affects the angle of the line.<br>
-                        4. Apply their knowledge to solve word problems that involve real-life situations, such as budgeting or distance-speed-time problems.`,
-                    location: 'Dubai, UAE',
-                    price: 100,
-                    image: '../images/Logo.png',
-                    availability: 5,
-                    // this acts like stock availability
-                },
+                products: products,
                 cart: [],
                 showProduct: true,
+                order: {
+                    firstName: '',
+                    lastName: '',
+                    address: '',
+                    city: '',
+                    phone: '',
+                    state: '',
+                    zip: '',
+                    gift: false,
+                    sendGift: 'Send Gift',
+                    dontSendGift: 'Do not send as gift',
+                    method: ''
+                },
+                states: {
+                    DXB: 'Dubai',
+                    AUH: 'Abu Dhabi',
+                    SHJ: 'Sharjah',
+                    RAK: 'Ras Al Khaima',
+                    UMQ: 'Umm al Quwain'
+                },
+                sortStyle: '', // New property for sorting
+                searchTerm: '', // New property for search
+                selectedCartItems: []
             },
             methods: {
                 addToCart(product) {
-                    this.cart.push(product);
-                    this.product.availability -= 1
+                    this.cart.push(product.id);
+                    this.selectedCartItems.push(product);
                 },
                 showCheckout() {
-                    this.showProduct = this.showProduct ? false : true;
+                    this.showProduct = !this.showProduct;
                 },
+                submitForm() {
+                    alert('Order submitted!');
+                },
+                canAddToCart(product) {
+                    return product.availableInventory > this.cartCount(product.id);
+                },
+                cartCount(id) {
+                    return this.cart.filter(cartId => cartId === id).length;
+                },
+                removeItem(product) {
+                    const index = this.cart.indexOf(product.id);
+                    if (index !== -1) {
+                        this.cart.splice(index, 1);
+                        product.availableInventory++;
+                    }
+                }
             },
             computed: {
-                cartItemCount: function () {
-                    return this.cart.length || ""
+                isFormComplete() {
+                    const isPersonalInfoComplete = this.order.firstName.trim() !== '' &&
+                        this.order.lastName.trim() !== '' &&
+                        this.order.address.trim() !== '' &&
+                        this.order.city.trim() !== '' &&
+                        this.order.state !== '' &&
+                        this.order.zip !== '';
+                        this.order.phone !== '';
+
+                    const isShippingOrMethodSelected = this.order.gift === true ||
+                        (this.order.method === 'Home' || this.order.method === 'Business');
+
+                    return isPersonalInfoComplete && isShippingOrMethodSelected;
                 },
-                canAddToCart: function () {
-                    return this.product.availability > 0
+                cartItems() {
+                    // Map the cart to the full product objects based on their IDs
+                    return this.cart.map(id => this.products.find(product => product.id === id));
+                },
+                cartItemCount() {
+                    return this.cart.length || "";
+                },
+                sortedProducts() {
+                    let productsArray = this.products.slice();
+
+                    // Apply sorting
+                    if (this.sortStyle === 'priceLowHigh') {
+                        productsArray.sort((a, b) => a.price - b.price);
+                    } else if (this.sortStyle === 'priceHighLow') {
+                        productsArray.sort((a, b) => b.price - a.price);
+                    } else if (this.sortStyle === 'aToZ') {
+                        productsArray.sort((a, b) => a.subject.localeCompare(b.subject));
+                    } else if (this.sortStyle === 'zToA') {
+                        productsArray.sort((a, b) => b.subject.localeCompare(a.subject));
+                    }
+
+                    // Filter products based on search term
+                    if (this.searchTerm) {
+                        productsArray = productsArray.filter(product =>
+                            product.subject.toLowerCase().includes(this.searchTerm.toLowerCase())
+                        );
+                    }
+
+                    return productsArray;
                 }
             }
         });
     </script>
-
 </body>
 
 </html>
